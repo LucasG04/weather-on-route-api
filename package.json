@@ -7,7 +7,9 @@
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "npm run build && node build/index.js",
+    "dev": "npx nodemon",
+    "build": "rimraf ./build && tsc"
   },
   "dependencies": {
     "cookie-parser": "^1.4.7",
@@ -19,5 +21,12 @@
     "jsonwebtoken": "^9.0.2",
     "rate-limiter-flexible": "^7.1.0",
     "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.18",
+    "nodemon": "^3.1.10",
+    "rimraf": "^6.0.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
   }
 }
