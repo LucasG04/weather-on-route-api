@@ -1,0 +1,23 @@
+{
+  "name": "weather-on-route-api",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "LucasG04",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "crypto-js": "^4.2.0",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "rate-limiter-flexible": "^7.1.0",
+    "uuid": "^11.1.0"
+  }
+}
