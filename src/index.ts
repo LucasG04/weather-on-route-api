@@ -28,13 +28,15 @@ const corsOptions = {
     'Content-Type',
     'Authorization',
     'X-Request-Signature',
-    'X-Session-Token',
+    'X-Timestamp',
   ],
 };
 app.use(cors(corsOptions));
 
 // ----- CONFIGURATION -----
 const config = {
+  STAGE: process.env.STAGE || 'prod',
+
   // Secret keys - store in .env file or secret manager in production
   JWT_SECRET: process.env.JWT_SECRET,
   API_SECRET: process.env.API_SECRET,
@@ -63,7 +65,7 @@ const globalRateLimiter = new RateLimiterMemory({
 // Stricter rate limiting for auth endpoints
 const authRateLimiter = new RateLimiterMemory({
   points: 5, // only 5 requests
-  duration: 60, // per 1 minute
+  duration: config.STAGE === 'dev' ? 1 : 60, // per 1 minute
   blockDuration: 300, // Block for 5 minutes on exceeding limit
 });
 
@@ -81,10 +83,10 @@ app.post('/api/auth/session', async (req, res) => {
     if (req.ip) {
       await authRateLimiter.consume(req.ip);
     }
-
     // Check the referrer
     const referrer = req.headers.referer || '';
-    if (!referrer.includes('your-frontend-domain.com')) {
+    const allowedReferrer = allowedOrigins.some((v) => referrer.includes(v));
+    if (!allowedReferrer) {
       return res.status(403).json({ error: 'Invalid referrer' });
     }
 
@@ -124,6 +126,7 @@ app.post('/api/auth/session', async (req, res) => {
 
     return res.json({ token });
   } catch (error: any) {
+    console.error('Error generating session token:', error);
     if (error.remainingPoints !== undefined) {
       return res.status(429).json({ error: 'Too many requests, please wait' });
     }
@@ -263,12 +266,6 @@ app.post('/api/proxy/:service', validateRequest, async (req, res) => {
       default:
         return res.status(400).json({ error: 'Service not supported' });
     }
-
-    // Log usage for billing purposes
-    // TODO: check if sessionId is valid
-    console.log(
-      `API usage: ${service} by session ${req.headers['x-session-token']}`
-    );
 
     if (!data) {
       return res.status(500).json({ error: 'No data returned from service' });
