@@ -66,19 +66,46 @@ export const getWeather = async (
   }
 };
 
+const formatDuration = (seconds: number): string => {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.round((seconds % 3600) / 60);
+
+  if (hours > 0) {
+    return `${hours} h ${minutes} min`;
+  }
+  return `${minutes} min`;
+};
+
+const formatDistance = (meters: number): string => {
+  if (meters >= 1000) {
+    return `${(meters / 1000).toFixed(1)} km`;
+  }
+  return `${Math.round(meters)} m`;
+};
+
 export const getDirections = async (req: DirectionRequest): Promise<any> => {
-  const coords = req.coords.map((coord) => ({ coordinates: coord }));
+  const coords = req.coords.map((coord) => ({
+    coordinates: coord,
+    radius: 'unlimited',
+    approach: 'unrestricted',
+  }));
+  const config = {
+    profile: req.mode,
+    waypoints: coords,
+    departAt: req.departAt,
+    // arriveBy: req.arriveBy,
+    geometries: 'geojson',
+    voiceInstructions: false,
+    steps: false,
+  };
   try {
-    const response = await directionsClient.getDirections({
-      profile: req.mode,
-      waypoints: coords,
-      departAt: req.departAt,
-      // arriveBy: req.arriveBy,
-      geometries: 'geojson',
-      voiceInstructions: false,
-      steps: false,
-    });
-    return response.body;
+    const response = await directionsClient.getDirections(config).send();
+    const route = response?.body?.routes?.[0];
+    return {
+      ...route,
+      distance_text: formatDistance(route.distance),
+      duration_text: formatDuration(route.duration),
+    };
   } catch (error) {
     console.error('Error fetching directions data:', error);
     return undefined;
