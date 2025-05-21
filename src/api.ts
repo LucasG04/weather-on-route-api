@@ -1,3 +1,7 @@
+import mbxClient from '@mapbox/mapbox-sdk';
+import mbxGeocoding from '@mapbox/mapbox-sdk/services/geocoding';
+import mbxDirections from '@mapbox/mapbox-sdk/services/directions';
+
 import { DirectionRequest, WeatherData } from './types';
 
 const config = {
@@ -7,6 +11,10 @@ const config = {
   WEATHER_API_KEY: process.env.WEATHER_API_KEY,
   WEATHER_API_URL: 'http://api.weatherapi.com/v1',
 };
+
+const baseClient = mbxClient({ accessToken: config.MAPBOX_API_KEY });
+const geocodingClient = mbxGeocoding(baseClient);
+const directionsClient = mbxDirections(baseClient);
 
 const urlWithParams = (url, params) => {
   let query = Object.keys(params)
@@ -59,24 +67,18 @@ export const getWeather = async (
 };
 
 export const getDirections = async (req: DirectionRequest): Promise<any> => {
-  const coordsStr = req.coords.join(';');
-  const url = urlWithParams(
-    `${config.MAPBOX_API_URL}/directions/v5/mapbox/${req.mode}/${coordsStr}`,
-    {
-      language: req.language, // en, de
-      depart_at: req.departAt,
-      access_token: config.MAPBOX_API_KEY,
-      alternatives: false,
-      geometries: 'geojson',
-      overview: 'full',
-      steps: false,
-    }
-  );
-
+  const coords = req.coords.map((coord) => ({ coordinates: coord }));
   try {
-    const response = await fetch(url);
-    const data = (await response.json()) as any;
-    return data;
+    const response = await directionsClient.getDirections({
+      profile: req.mode,
+      waypoints: coords,
+      departAt: req.departAt,
+      // arriveBy: req.arriveBy,
+      geometries: 'geojson',
+      voiceInstructions: false,
+      steps: false,
+    });
+    return response.body;
   } catch (error) {
     console.error('Error fetching directions data:', error);
     return undefined;
@@ -87,19 +89,20 @@ export const getSearch = async (
   query: string,
   language: 'en' | 'de'
 ): Promise<any> => {
-  const url = urlWithParams(
-    `${config.MAPBOX_API_URL}/search/searchbox/v1/suggest`,
-    {
-      q: query,
-      access_token: config.MAPBOX_API_KEY,
-      language: language,
-      limit: 5,
-    }
-  );
+  if (!query) {
+    console.error('Query is required for search.');
+    return undefined;
+  }
+
   try {
-    const response = await fetch(url);
-    const data = (await response.json()) as any;
-    return data;
+    const forwardGeocode = await geocodingClient
+      .forwardGeocode({
+        query: query,
+        limit: 5,
+        language: [language],
+      })
+      .send();
+    return forwardGeocode?.body?.features;
   } catch (error) {
     console.error('Error fetching search data:', error);
     return undefined;

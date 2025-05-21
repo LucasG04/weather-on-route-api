@@ -10,9 +10,7 @@ export interface DirectionRequest {
   mode: 'driving' | 'walking' | 'cycling';
 
   /** coordinates in the format "lat,lon" */
-  coords: string[];
-
-  language: 'en' | 'de';
+  coords: number[][];
 
   /** local time in "2023-10-01T13:41" */
   departAt: string;

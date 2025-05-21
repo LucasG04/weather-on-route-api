@@ -256,7 +256,6 @@ app.post('/api/proxy/:service', validateRequest, async (req, res) => {
         data = await getDirections({
           mode: req.body.mode,
           coords: req.body.coords,
-          language: req.body.language,
           departAt: req.body.departAt,
         });
         break;
