@@ -9,7 +9,7 @@ export interface WeatherData {
 export interface DirectionRequest {
   mode: 'driving' | 'walking' | 'cycling';
 
-  /** coordinates in the format "lat,lon" */
+  /** coordinates in the format "lon,lat" */
   coords: number[][];
 
   /** local time in "2023-10-01T13:41" */

@@ -2,7 +2,8 @@ import mbxClient from '@mapbox/mapbox-sdk';
 import mbxGeocoding from '@mapbox/mapbox-sdk/services/geocoding';
 import mbxDirections from '@mapbox/mapbox-sdk/services/directions';
 
-import { DirectionRequest, WeatherData } from './types';
+import { DirectionRequest, WeatherData } from './shared/types';
+import { formatDistance, formatDuration } from './shared/format';
 
 const config = {
   MAPBOX_API_KEY: process.env.MAPBOX_API_KEY,
@@ -66,23 +67,6 @@ export const getWeather = async (
   }
 };
 
-const formatDuration = (seconds: number): string => {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.round((seconds % 3600) / 60);
-
-  if (hours > 0) {
-    return `${hours} h ${minutes} min`;
-  }
-  return `${minutes} min`;
-};
-
-const formatDistance = (meters: number): string => {
-  if (meters >= 1000) {
-    return `${(meters / 1000).toFixed(1)} km`;
-  }
-  return `${Math.round(meters)} m`;
-};
-
 export const getDirections = async (req: DirectionRequest): Promise<any> => {
   const coords = req.coords.map((coord) => ({
     coordinates: coord,
@@ -94,7 +78,8 @@ export const getDirections = async (req: DirectionRequest): Promise<any> => {
     waypoints: coords,
     departAt: req.departAt,
     // arriveBy: req.arriveBy,
-    geometries: 'geojson',
+    geometries: 'polyline6',
+    overview: 'full',
     voiceInstructions: false,
     steps: false,
   };
