@@ -4,6 +4,7 @@ import mbxDirections from '@mapbox/mapbox-sdk/services/directions';
 
 import {
   DirectionRequest,
+  DirectionResponse,
   WeatherApiResponse as WeatherApiForecastHour,
   WeatherData,
 } from './shared/types';
@@ -73,7 +74,9 @@ export const getWeather = async (
   }
 };
 
-export const getDirections = async (req: DirectionRequest): Promise<any> => {
+export const getDirections = async (
+  req: DirectionRequest
+): Promise<DirectionResponse | undefined> => {
   const coords = req.coords.map((coord) => ({
     coordinates: coord,
     radius: 'unlimited',
@@ -107,6 +110,7 @@ export const getDirections = async (req: DirectionRequest): Promise<any> => {
 
     return {
       ...route,
+      depart_at: req.departAt,
       distance_text: formatDistance(route.distance),
       duration_text: formatDuration(route.duration),
       timedWaypoints,
