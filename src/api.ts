@@ -2,8 +2,13 @@ import mbxClient from '@mapbox/mapbox-sdk';
 import mbxGeocoding from '@mapbox/mapbox-sdk/services/geocoding';
 import mbxDirections from '@mapbox/mapbox-sdk/services/directions';
 
-import { DirectionRequest, WeatherData } from './shared/types';
+import {
+  DirectionRequest,
+  WeatherApiResponse as WeatherApiForecastHour,
+  WeatherData,
+} from './shared/types';
 import { formatDistance, formatDuration } from './shared/format';
+import { extractWeatherWaypoints } from './shared/extract-waypoints';
 
 const config = {
   MAPBOX_API_KEY: process.env.MAPBOX_API_KEY,
@@ -45,9 +50,10 @@ export const getWeather = async (
     const data = (await response.json()) as any;
 
     // Access the hourly forecast
-    const forecastHour = data.forecast.forecastday[0].hour.find((h) =>
-      h.time.includes(`${hour}:00`)
-    );
+    const forecastHour: WeatherApiForecastHour =
+      data.forecast.forecastday[0].hour.find((h) =>
+        h.time.includes(`${hour}:00`)
+      );
 
     if (!forecastHour) {
       console.error('No forecast data available for the specified hour.');
@@ -56,7 +62,7 @@ export const getWeather = async (
 
     return {
       temperature: forecastHour.temp_c,
-      condition: forecastHour.condition.text,
+      condition: forecastHour.condition,
       time: forecastHour.time,
       date: date,
       hour: hour,
@@ -81,15 +87,29 @@ export const getDirections = async (req: DirectionRequest): Promise<any> => {
     geometries: 'polyline6',
     overview: 'full',
     voiceInstructions: false,
-    steps: false,
+    steps: true,
   };
   try {
     const response = await directionsClient.getDirections(config).send();
     const route = response?.body?.routes?.[0];
+    if (!route) {
+      console.error('No route found in the response.');
+      return undefined;
+    }
+
+    const steps = route?.legs?.[0]?.steps || [];
+    const timedWaypoints = await extractWeatherWaypoints(
+      new Date(req.departAt),
+      steps
+    );
+
+    route.legs = [];
+
     return {
       ...route,
       distance_text: formatDistance(route.distance),
       duration_text: formatDuration(route.duration),
+      timedWaypoints,
     };
   } catch (error) {
     console.error('Error fetching directions data:', error);
