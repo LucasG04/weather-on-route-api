@@ -85,13 +85,16 @@ export const getDirections = async (
   const config = {
     profile: req.mode,
     waypoints: coords,
-    departAt: req.departAt,
-    // arriveBy: req.arriveBy,
     geometries: 'polyline6',
     overview: 'full',
     voiceInstructions: false,
     steps: true,
   };
+
+  if (req.mode === 'driving') {
+    config['departAt'] = req.departAt;
+  }
+
   try {
     const response = await directionsClient.getDirections(config).send();
     const route = response?.body?.routes?.[0];
