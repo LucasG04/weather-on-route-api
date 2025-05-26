@@ -7,7 +7,7 @@
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
-    "start": "npm run build && node build/index.js",
+    "start": "node build/index.js",
     "dev": "npx nodemon",
     "build": "rimraf ./build && tsc"
   },
@@ -21,11 +21,11 @@
     "express": "^5.1.0",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
-    "rate-limiter-flexible": "^7.1.0",
+    "rate-limiter-flexible": "^7.1.1",
     "uuid": "^11.1.0"
   },
   "devDependencies": {
-    "@types/node": "^22.15.18",
+    "@types/node": "^22.15.21",
     "nodemon": "^3.1.10",
     "rimraf": "^6.0.1",
     "ts-node": "^10.9.2",

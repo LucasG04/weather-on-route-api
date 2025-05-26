@@ -10,8 +10,6 @@ export const extractWeatherWaypoints = async (
 ): Promise<TimedWaypoint[]> => {
   const waypoints = extractWaypoints(steps);
   for (const waypoint of waypoints) {
-    const config = {};
-
     const weatherForWaypoint = await getWeather(
       waypoint.lat.toString(),
       waypoint.lon.toString(),
