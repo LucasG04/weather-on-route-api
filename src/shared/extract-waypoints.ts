@@ -59,5 +59,16 @@ export const extractWaypoints = (steps: DirectionStep[]): TimedWaypoint[] => {
       currentTime += segmentDuration;
     }
   }
+
+  // Ensure a maximum of X waypoints are returned
+  const maxWaypoints = 20;
+  if (waypoints.length > maxWaypoints) {
+    const step = waypoints.length / maxWaypoints;
+    return Array.from(
+      { length: maxWaypoints },
+      (_, i) => waypoints[Math.floor(i * step)]
+    );
+  }
+
   return waypoints;
 };
