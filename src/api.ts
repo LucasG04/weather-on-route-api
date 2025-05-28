@@ -5,6 +5,8 @@ import mbxDirections from '@mapbox/mapbox-sdk/services/directions';
 import {
   DirectionRequest,
   DirectionResponse,
+  DirectionStep,
+  TimedWaypoint,
   WeatherApiResponse as WeatherApiForecastHour,
   WeatherData,
 } from './shared/types';
@@ -74,6 +76,19 @@ export const getWeather = async (
   }
 };
 
+// TODO: Implement in proxy
+export const getWeatherForRoute = async (
+  steps: DirectionStep[],
+  departAt: Date
+): Promise<TimedWaypoint[] | undefined> => {
+  if (!steps || !departAt) {
+    console.error('Geometry and departure time are required for weather data.');
+    return undefined;
+  }
+
+  return await extractWeatherWaypoints(departAt, steps);
+};
+
 export const getDirections = async (
   req: DirectionRequest
 ): Promise<DirectionResponse | undefined> => {
@@ -85,10 +100,11 @@ export const getDirections = async (
   const config = {
     profile: req.mode,
     waypoints: coords,
+    alternatives: true,
     geometries: 'polyline6',
     overview: 'full',
-    voiceInstructions: false,
     steps: true,
+    voiceInstructions: false,
   };
 
   if (req.mode === 'driving') {
@@ -97,19 +113,38 @@ export const getDirections = async (
 
   try {
     const response = await directionsClient.getDirections(config).send();
-    const route = response?.body?.routes?.[0];
-    if (!route) {
+    const routes = response?.body?.routes;
+    if (!routes || routes.length === 0) {
       console.error('No route found in the response.');
       return undefined;
     }
+    const route = response?.body?.routes?.[0];
 
-    const steps = route?.legs?.[0]?.steps || [];
+    // extract all steps of all legs in first route
+    const steps =
+      routes[0].legs?.reduce((acc, leg) => {
+        return acc.concat(leg.steps || []);
+      }, [] as DirectionStep[]) || [];
+
     const timedWaypoints = await extractWeatherWaypoints(
       new Date(req.departAt),
       steps
     );
-
     route.legs = [];
+
+    let alternatives = routes.slice(1); // Remove the first route, which is the main one
+    alternatives = alternatives.map((alt) => {
+      const steps =
+        alt.legs?.reduce((acc, leg) => {
+          return acc.concat(leg.steps || []);
+        }, [] as DirectionStep[]) || [];
+      alt['steps'] = steps.map((step) => ({
+        geometry: step.geometry,
+        distance: step.distance,
+        duration: step.duration,
+      }));
+      return alt;
+    });
 
     return {
       ...route,
@@ -117,6 +152,7 @@ export const getDirections = async (
       distance_text: formatDistance(route.distance),
       duration_text: formatDuration(route.duration),
       timedWaypoints,
+      alternatives,
     };
   } catch (error) {
     console.error('Error fetching directions data:', error);

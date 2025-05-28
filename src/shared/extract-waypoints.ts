@@ -4,6 +4,13 @@ import { decode as decodePolyline } from '@mapbox/polyline';
 
 const INTERVAL_SECONDS = 15 * 60; // 15 minutes in seconds
 
+/**
+ * Extracts waypoints from direction steps and fetches weather data for each waypoint.
+ * Needs the steps for calculating the time offsets.
+ * @param departAt - The departure time as a Date object.
+ * @param steps - An array of DirectionStep objects containing route information.
+ * @returns A promise that resolves to an array of TimedWaypoint objects with weather data.
+ */
 export const extractWeatherWaypoints = async (
   departAt: Date,
   steps: DirectionStep[]
